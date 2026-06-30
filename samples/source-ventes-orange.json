@@ -1,0 +1,86 @@
+{
+  "source_id": "ventes-orange-ci",
+  "source_name": "Ventes Orange CI - Hebdomadaire",
+  "description": "Remontées hebdomadaires des ventes de forfaits mobile par région et par agence Orange CI.",
+  "owner": "DataFlow CI - Equipe Télécom",
+  "version": 1,
+  "expected_frequency": "weekly",
+  "file_format": "csv",
+  "delimiter": ",",
+  "encoding": "utf-8",
+  "has_header": true,
+  "schema": {
+    "columns": [
+      {
+        "name": "date_vente",
+        "type": "date",
+        "required": true,
+        "format": "YYYY-MM-DD",
+        "description": "Date de la vente. Ne peut pas être dans le futur."
+      },
+      {
+        "name": "agence_code",
+        "type": "string",
+        "required": true,
+        "pattern": "^AG-[A-Z]{3}-\\d{4}$",
+        "description": "Code unique de l'agence Orange. Format AG-XXX-NNNN."
+      },
+      {
+        "name": "region",
+        "type": "enum",
+        "required": true,
+        "allowed_values": [
+          "Abidjan",
+          "Bouaké",
+          "Yamoussoukro",
+          "Daloa",
+          "San-Pédro",
+          "Korhogo",
+          "Man",
+          "Gagnoa"
+        ]
+      },
+      {
+        "name": "type_forfait",
+        "type": "enum",
+        "required": true,
+        "allowed_values": ["prepaid", "postpaid", "data_only", "fiber"]
+      },
+      {
+        "name": "quantite",
+        "type": "integer",
+        "required": true,
+        "min": 1,
+        "max": 10000,
+        "description": "Nombre de forfaits vendus. Entier strictement positif."
+      },
+      {
+        "name": "montant_fcfa",
+        "type": "integer",
+        "required": true,
+        "min": 0,
+        "description": "Montant total en FCFA. Entier positif ou nul."
+      },
+      {
+        "name": "client_segment",
+        "type": "enum",
+        "required": false,
+        "allowed_values": ["B2C", "B2B", "VIP"],
+        "description": "Segment client. Optionnel."
+      },
+      {
+        "name": "commercial_email",
+        "type": "string",
+        "required": true,
+        "pattern": "^[a-zA-Z0-9._-]+@orange\\.ci$",
+        "description": "Email du commercial. Doit être un email @orange.ci valide."
+      }
+    ],
+    "row_constraints": [
+      {
+        "name": "unique_per_day_per_agency",
+        "description": "Une combinaison (date_vente, agence_code, type_forfait) ne peut apparaître qu'une fois dans le fichier."
+      }
+    ]
+  }
+}

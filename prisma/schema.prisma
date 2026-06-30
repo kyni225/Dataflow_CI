@@ -1,0 +1,233 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum ColumnType {
+  STRING
+  NUMBER
+  INTEGER
+  DATE
+  BOOLEAN
+  ENUM
+}
+
+enum UploadStatus {
+  PENDING
+  PROCESSING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  accounts       Account[]
+  sessions       Session[]
+  sources        Source[]
+  schemaVersions SchemaVersion[] @relation("SchemaVersionCreator")
+  uploads        Upload[]
+  auditLogs      AuditLog[]
+
+  @@index([createdAt])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@index([userId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+model VerificationToken {
+  identifier String
+  token      String
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+model Source {
+  id          String   @id @default(cuid())
+  externalId  String?
+  name        String
+  description String?
+  ownerLabel  String?
+  expectedFrequency String?
+  fileFormat  String   @default("csv")
+  delimiter   String   @default(",")
+  encoding    String   @default("utf-8")
+  hasHeader   Boolean  @default(true)
+  rowConstraints Json?
+  ownerId     String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  owner          User            @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+  schemaVersions SchemaVersion[]
+  uploads        Upload[]
+  auditLogs      AuditLog[]
+
+  @@unique([ownerId, name])
+  @@unique([ownerId, externalId])
+  @@index([ownerId, createdAt])
+}
+
+model SchemaVersion {
+  id          String   @id @default(cuid())
+  sourceId    String
+  version     Int
+  isActive    Boolean  @default(true)
+  createdById String
+  createdAt   DateTime @default(now())
+
+  source    Source         @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  createdBy User           @relation("SchemaVersionCreator", fields: [createdById], references: [id], onDelete: Restrict)
+  columns   SchemaColumn[]
+  uploads   Upload[]
+
+  @@unique([sourceId, version])
+  @@index([sourceId, isActive])
+  @@index([createdById])
+}
+
+model SchemaColumn {
+  id              String     @id @default(cuid())
+  schemaVersionId String
+  name            String
+  type            ColumnType
+  required        Boolean    @default(false)
+  regex           String?
+  allowedValues   String[]   @default([])
+  min             Float?
+  max             Float?
+  minLength       Int?
+  maxLength       Int?
+  dateFormat      String?
+  description     String?
+  position        Int
+  createdAt       DateTime   @default(now())
+
+  schemaVersion SchemaVersion @relation(fields: [schemaVersionId], references: [id], onDelete: Cascade)
+
+  @@unique([schemaVersionId, name])
+  @@index([schemaVersionId, position])
+}
+
+model Upload {
+  id                     String       @id @default(cuid())
+  sourceId               String
+  schemaVersionId        String
+  uploadedById           String
+  originalFileName       String
+  storagePath            String
+  mimeType               String
+  byteSize               Int
+  status                 UploadStatus @default(PENDING)
+  rowCount               Int          @default(0)
+  validRows              Int          @default(0)
+  invalidRows            Int          @default(0)
+  processingStartedAt    DateTime?
+  processingFinishedAt   DateTime?
+  processingDurationMs   Int?
+  errorMessage           String?
+  createdAt              DateTime     @default(now())
+  updatedAt              DateTime     @updatedAt
+
+  source        Source              @relation(fields: [sourceId], references: [id], onDelete: Cascade)
+  schemaVersion SchemaVersion       @relation(fields: [schemaVersionId], references: [id], onDelete: Cascade)
+  uploadedBy    User                @relation(fields: [uploadedById], references: [id], onDelete: Restrict)
+  errors        UploadError[]
+  validRecords  UploadValidRecord[]
+  auditLogs     AuditLog[]
+
+  @@index([sourceId, createdAt])
+  @@index([schemaVersionId])
+  @@index([uploadedById, createdAt])
+  @@index([status, createdAt])
+}
+
+model UploadError {
+  id         String   @id @default(cuid())
+  uploadId   String
+  rowNumber  Int
+  columnName String?
+  reason     String
+  rawValue   String?
+  createdAt  DateTime @default(now())
+
+  upload Upload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@index([uploadId, rowNumber])
+  @@index([columnName])
+}
+
+model UploadValidRecord {
+  id        String   @id @default(cuid())
+  uploadId  String
+  rowNumber Int
+  data      Json
+  createdAt DateTime @default(now())
+
+  upload Upload @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@unique([uploadId, rowNumber])
+  @@index([uploadId])
+}
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  actorId    String?
+  sourceId   String?
+  uploadId   String?
+  action     String
+  entityType String
+  entityId   String
+  metadata   Json?
+  createdAt  DateTime @default(now())
+
+  actor  User?   @relation(fields: [actorId], references: [id], onDelete: SetNull)
+  source Source? @relation(fields: [sourceId], references: [id], onDelete: SetNull)
+  upload Upload? @relation(fields: [uploadId], references: [id], onDelete: SetNull)
+
+  @@index([actorId, createdAt])
+  @@index([sourceId, createdAt])
+  @@index([uploadId, createdAt])
+  @@index([entityType, entityId])
+}

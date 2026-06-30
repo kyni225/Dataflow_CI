@@ -1,0 +1,80 @@
+{
+  "source_id": "stock-banque-atlantique",
+  "source_name": "Stock Cartes Bancaires - Banque Atlantique CI",
+  "description": "Inventaire quotidien des cartes bancaires en stock par agence et par type.",
+  "owner": "DataFlow CI - Equipe Banque",
+  "version": 2,
+  "expected_frequency": "daily",
+  "file_format": "csv",
+  "delimiter": ";",
+  "encoding": "utf-8",
+  "has_header": true,
+  "schema": {
+    "columns": [
+      {
+        "name": "date_inventaire",
+        "type": "date",
+        "required": true,
+        "format": "DD/MM/YYYY",
+        "description": "Date de l'inventaire au format européen."
+      },
+      {
+        "name": "agence_id",
+        "type": "string",
+        "required": true,
+        "pattern": "^BA\\d{5}$",
+        "description": "Identifiant de l'agence Banque Atlantique. Format BA suivi de 5 chiffres."
+      },
+      {
+        "name": "ville",
+        "type": "string",
+        "required": true,
+        "min_length": 2,
+        "max_length": 50
+      },
+      {
+        "name": "type_carte",
+        "type": "enum",
+        "required": true,
+        "allowed_values": ["VISA_CLASSIC", "VISA_GOLD", "VISA_PLATINUM", "MASTERCARD_STANDARD", "MASTERCARD_WORLD"]
+      },
+      {
+        "name": "stock_disponible",
+        "type": "integer",
+        "required": true,
+        "min": 0,
+        "max": 5000
+      },
+      {
+        "name": "seuil_alerte",
+        "type": "integer",
+        "required": true,
+        "min": 0,
+        "description": "Si stock_disponible <= seuil_alerte, une alerte doit être levée. seuil_alerte doit être <= stock_max théorique."
+      },
+      {
+        "name": "responsable_email",
+        "type": "string",
+        "required": true,
+        "pattern": "^[a-zA-Z0-9._-]+@banqueatlantique\\.ci$"
+      },
+      {
+        "name": "dernier_reapprovisionnement",
+        "type": "date",
+        "required": false,
+        "format": "DD/MM/YYYY",
+        "description": "Date du dernier réapprovisionnement. Doit être <= date_inventaire si renseignée."
+      }
+    ],
+    "row_constraints": [
+      {
+        "name": "unique_per_day_per_agency_per_card",
+        "description": "Une combinaison (date_inventaire, agence_id, type_carte) doit être unique."
+      },
+      {
+        "name": "reappro_before_inventory",
+        "description": "Si dernier_reapprovisionnement est renseigné, il doit être <= date_inventaire."
+      }
+    ]
+  }
+}
