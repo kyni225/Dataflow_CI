@@ -20,6 +20,23 @@ export function toErrorResponse(error: unknown) {
     );
   }
 
+  if (isPrismaError(error)) {
+    if (error.code === 'P2002') {
+      return Response.json(
+        {
+          error: "Une source avec ce nom existe deja."
+        },
+        { status: 409 }
+      );
+    }
+    return Response.json(
+      {
+        error: "Erreur de base de donnees."
+      },
+      { status: 500 }
+    );
+  }
+
   if (isZodError(error)) {
     return Response.json(
       {
@@ -50,5 +67,16 @@ function isZodError(error: unknown): error is {
     error.name === "ZodError" &&
     "flatten" in error &&
     typeof error.flatten === "function"
+  );
+}
+
+function isPrismaError(error: unknown): error is {
+  code: string;
+} {
+  return (
+    typeof error === "object" &&
+    error !== null &&
+    "code" in error &&
+    typeof error.code === "string"
   );
 }
