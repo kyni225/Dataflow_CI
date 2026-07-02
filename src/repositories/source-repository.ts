@@ -133,8 +133,8 @@ export const sourceRepository = {
 
         return source;
       });
-    } catch (error: any) {
-      if (error.code === 'P2002') {
+    } catch (error: unknown) {
+      if (error && typeof error === 'object' && 'code' in error && error.code === 'P2002') {
         throw new AppError("Une source avec ce nom existe deja.", 409);
       }
       throw error;
