@@ -22,7 +22,5 @@ COPY --from=builder /app/prisma ./prisma
 COPY --from=builder /app/node_modules ./node_modules
 COPY --from=builder /app/src ./src
 COPY --from=builder /app/tsconfig.json ./tsconfig.json
-COPY --from=builder /app/entrypoint.sh ./entrypoint.sh
-RUN chmod +x entrypoint.sh
 EXPOSE 3000
-CMD ["./entrypoint.sh"]
+CMD ["sh", "-c", "npx prisma migrate deploy && node server.js"]
