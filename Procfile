@@ -1,2 +1,2 @@
-web: npx prisma migrate deploy && node server.js
+web: npm run db:deploy && npm run start
 worker: npm run worker
