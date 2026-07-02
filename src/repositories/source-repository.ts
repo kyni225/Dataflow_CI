@@ -74,64 +74,71 @@ export const sourceRepository = {
   },
 
   async create(ownerId: string, input: SourceInput) {
-    return prisma.$transaction(async (tx) => {
-      const source = await tx.source.create({
-        data: {
-          ownerId,
-          externalId: input.externalId ?? null,
-          name: input.name,
-          description: input.description ?? null,
-          ownerLabel: input.ownerLabel ?? null,
-          expectedFrequency: input.expectedFrequency ?? null,
-          fileFormat: input.fileFormat,
-          delimiter: input.delimiter,
-          encoding: input.encoding,
-          hasHeader: input.hasHeader,
-          rowConstraints: input.rowConstraints,
-          schemaVersions: {
-            create: {
-              version: input.schemaVersion,
-              isActive: true,
-              createdById: ownerId,
-              columns: {
-                create: input.columns.map((column, index) => ({
-                  name: column.name,
-                  type: toPrismaColumnType(column.type),
-                  required: column.required,
-                  regex: column.regex || null,
-                  allowedValues: column.allowedValues ?? [],
-                  min: column.min ?? null,
-                  max: column.max ?? null,
-                  minLength: column.minLength ?? null,
-                  maxLength: column.maxLength ?? null,
-                  dateFormat: column.dateFormat ?? null,
-                  description: column.description || null,
-                  position: column.position || index + 1
-                }))
+    try {
+      return prisma.$transaction(async (tx) => {
+        const source = await tx.source.create({
+          data: {
+            ownerId,
+            externalId: input.externalId ?? null,
+            name: input.name,
+            description: input.description ?? null,
+            ownerLabel: input.ownerLabel ?? null,
+            expectedFrequency: input.expectedFrequency ?? null,
+            fileFormat: input.fileFormat,
+            delimiter: input.delimiter,
+            encoding: input.encoding,
+            hasHeader: input.hasHeader,
+            rowConstraints: input.rowConstraints,
+            schemaVersions: {
+              create: {
+                version: input.schemaVersion,
+                isActive: true,
+                createdById: ownerId,
+                columns: {
+                  create: input.columns.map((column, index) => ({
+                    name: column.name,
+                    type: toPrismaColumnType(column.type),
+                    required: column.required,
+                    regex: column.regex || null,
+                    allowedValues: column.allowedValues ?? [],
+                    min: column.min ?? null,
+                    max: column.max ?? null,
+                    minLength: column.minLength ?? null,
+                    maxLength: column.maxLength ?? null,
+                    dateFormat: column.dateFormat ?? null,
+                    description: column.description || null,
+                    position: column.position || index + 1
+                  }))
+                }
               }
             }
+          },
+          include: {
+            schemaVersions: {
+              include: schemaInclude
+            }
           }
-        },
-        include: {
-          schemaVersions: {
-            include: schemaInclude
+        });
+
+        await tx.auditLog.create({
+          data: {
+            actorId: ownerId,
+            sourceId: source.id,
+            action: "SOURCE_CREATED",
+            entityType: "Source",
+            entityId: source.id,
+            metadata: { version: input.schemaVersion, externalId: input.externalId }
           }
-        }
-      });
+        });
 
-      await tx.auditLog.create({
-        data: {
-          actorId: ownerId,
-          sourceId: source.id,
-          action: "SOURCE_CREATED",
-          entityType: "Source",
-          entityId: source.id,
-          metadata: { version: input.schemaVersion, externalId: input.externalId }
-        }
+        return source;
       });
-
-      return source;
-    });
+    } catch (error: any) {
+      if (error.code === 'P2002') {
+        throw new AppError("Une source avec ce nom existe deja.", 409);
+      }
+      throw error;
+    }
   },
 
   async updateAndVersion(sourceId: string, ownerId: string, input: SourceInput) {
