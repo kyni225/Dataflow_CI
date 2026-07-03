@@ -12,10 +12,16 @@ export default async function UploadDetailsPage({
 }: {
   params: { uploadId: string };
 }) {
+  console.log("[UploadDetails] uploadId:", params.uploadId);
+  
   const session = await auth();
+  console.log("[UploadDetails] session:", session?.user?.id);
+  
   const upload = await uploadRepository.getForOwner(params.uploadId, session?.user?.id ?? "");
+  console.log("[UploadDetails] upload:", upload?.id);
 
   if (!upload) {
+    console.log("[UploadDetails] Upload not found or access denied");
     notFound();
   }
 
