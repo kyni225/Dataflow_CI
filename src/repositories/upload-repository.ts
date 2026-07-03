@@ -49,6 +49,30 @@ export const uploadRepository = {
     return upload;
   },
 
+  async getUploadDetails(uploadId: string) {
+    const upload = await prisma.upload.findUnique({
+      where: { id: uploadId },
+      include: {
+        source: true,
+        schemaVersion: {
+          include: {
+            columns: {
+              orderBy: { position: "asc" }
+            }
+          }
+        },
+        errors: {
+          orderBy: [{ rowNumber: "asc" }, { columnName: "asc" }]
+        },
+        validRecords: {
+          orderBy: { rowNumber: "asc" }
+        }
+      }
+    });
+
+    return upload;
+  },
+
   async create(input: {
     sourceId: string;
     schemaVersionId: string;
