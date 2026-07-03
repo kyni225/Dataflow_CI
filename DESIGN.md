@@ -131,98 +131,13 @@ erDiagram
 
 ## 4. Choix techniques
 
-### Framework backend : Next.js API Routes
-
-**Pourquoi ?**
-- Intégration native avec le frontend (même projet, même types)
-- Server Components permettent de faire des requêtes Prisma directement depuis les composants
-- Route Handlers pour l'API REST
-- Déploiement simplifié (un seul build Next.js)
-
-**Alternatives considérées :**
-- Express/Fastify : Auraient nécessité un projet séparé pour le backend, plus de complexité pour le déploiement.
-- NestJS : Surdimensionné pour ce MVP, courbe d'apprentissage plus élevée.
-
-### Base de données : PostgreSQL
-
-**Pourquoi ?**
-- Relations fortes entre entités (User, Source, SchemaVersion, Upload, etc.)
-- JSONB pour stocker les données des lignes valides normalisées
-- Transactions ACID pour garantir la cohérence (création upload + enqueue job)
-- Compatible Railway (service PostgreSQL natif)
-- Prisma ORM excellent pour TypeScript
-
-**Alternatives considérées :**
-- SQLite : Pas adapté pour Railway (pas de persistance entre redéploiements).
-- MongoDB : Moins adapté pour les relations fortes et les transactions.
-- MySQL : Bon choix aussi, mais PostgreSQL a des fonctionnalités JSON plus avancées.
-
-### ORM : Prisma
-
-**Pourquoi ?**
-- Schema lisible et type-safe en TypeScript
-- Migrations automatiques
-- Client Prisma généré automatiquement avec les types
-- Excellent support PostgreSQL
-- Facile à tester (mocking possible)
-
-**Alternatives considérées :**
-- Drizzle : Plus léger, mais moins mature que Prisma.
-- Kysely : Type-safe mais plus verbeux, moins de "magie".
-- Raw SQL : Trop verbeux, pas de type safety.
-
-### Gestion de l'async : BullMQ + Redis
-
-**Pourquoi ?**
-- Queue robuste avec retry, backoff, dead letter queue
-- Worker séparé du serveur web (scalabilité indépendante)
-- Compatible Railway (service Redis natif)
-- API simple et bien documentée
-- Support pour les jobs prioritaires, retardés, etc.
-
-**Alternatives considérées :**
-- `setImmediate` : Pas de retry, pas de persistance, pas adapté pour la production.
-- Inngest : Service externe, plus complexe à configurer.
-- Trigger.dev : Similaire à Inngest, service externe.
-
-### Stockage de fichiers : Filesystem local
-
-**Pourquoi ?**
-- Simple pour un MVP local
-- Pas de dépendance externe
-- Suffisant pour 10 MB
-
-**Limites et alternatives :**
-- **Problème** : Pas persistant entre redéploiements Railway (résolu avec volume persistant).
-- **Alternative production** : S3/GCS pour la scalabilité, la redondance et la performance.
-
-### Auth : NextAuth.js Credentials
-
-**Pourquoi ?**
-- Intégration native avec Next.js
-- Support Credentials provider (email + mot de passe)
-- Sessions JWT stockées en base (via Prisma adapter)
-- Middleware pour protéger les routes
-- Facile à configurer
-
-**Alternatives considérées :**
-- Clerk : Service externe, plus complexe pour un MVP.
-- better-auth : Plus récent, moins de documentation.
-- Custom : Trop de travail pour un MVP (hash, sessions, CSRF, etc.).
-
-### Hébergement : Railway
-
-**Pourquoi ?**
-- Support natif PostgreSQL, Redis, volumes persistants
-- Configuration simple via UI ou fichier `railway.json`
-- Déploiement automatique depuis GitHub
-- Services séparés (web, worker, postgres, redis)
-- Bon rapport qualité/prix pour un MVP
-
-**Alternatives considérées :**
-- Vercel : Excellent pour Next.js, mais pas de support natif Redis/worker (nécessiterait des services externes).
-- Render : Similaire à Railway, mais moins mature pour les workers.
-- AWS/GCP : Surdimensionné pour un MVP, complexité élevée.
+- **Framework** : Next.js API Routes - Intégration native avec le frontend, déploiement simplifié.
+- **Base de données** : PostgreSQL - Relations fortes, JSONB, transactions ACID.
+- **ORM** : Prisma - Schema lisible, migrations automatiques, type-safe.
+- **Async** : BullMQ + Redis - Queue robuste avec retry, worker séparé.
+- **Stockage** : Filesystem local - Simple pour MVP, volume persistant sur Railway.
+- **Auth** : NextAuth.js Credentials - Intégration native, sessions JWT.
+- **Hébergement** : Railway - Support natif PostgreSQL/Redis, déploiement automatique.
 
 ## 5. Ce qui marche, ce qui ne marche pas, ce qui manque
 
@@ -264,122 +179,16 @@ erDiagram
 
 ## 6. Trade-offs assumés
 
-### Stockage local vs S3/GCS
-
-**Trade-off** : J'ai choisi le stockage local pour la simplicité du MVP.
-
-**Justification** :
-- Avantages : Pas de dépendance externe, configuration simple, suffisant pour 10 MB.
-- Inconvénients : Pas persistant entre redéploiements (résolu avec volume Railway), pas scalable.
-
-**Si j'avais 2 semaines de plus** : J'implémenterais S3/GCS avec un service d'abstraction pour faciliter le switch.
-
-### Pas de streaming vs streaming
-
-**Trade-off** : J'ai choisi de lire les fichiers en mémoire entière.
-
-**Justification** :
-- Avantages : Code plus simple, suffisant pour 10 MB.
-- Inconvénients : Problèmes de mémoire pour des fichiers plus gros.
-
-**Si j'avais 2 semaines de plus** : J'implémenterais un streaming avec PapaParse stream mode.
-
-### Polling vs Websocket/SSE
-
-**Trade-off** : J'ai choisi le polling pour rafraîchir le statut d'upload.
-
-**Justification** :
-- Avantages : Plus simple à implémenter, plus robuste (pas de connexion persistante).
-- Inconvénients : Moins réactif, plus de requêtes serveur.
-
-**Si j'avais 2 semaines de plus** : J'implémenterais Server-Sent Events pour un temps réel plus propre.
-
-### Auth basique vs RBAC
-
-**Trade-off** : J'ai choisi une auth basique sans rôles.
-
-**Justification** :
-- Avantages : Plus simple, suffisant pour le MVP (chaque utilisateur voit ses propres données).
-- Inconvénients : Pas de gestion des permissions, pas d'admin.
-
-**Si j'avais 2 semaines de plus** : J'ajouterais un système de rôles (admin, user, viewer) avec RBAC.
-
-### Validation ligne par ligne vs validation cross-lignes
-
-**Trade-off** : J'ai choisi une validation ligne par ligne uniquement.
-
-**Justification** :
-- Avantages : Plus simple à implémenter et à tester, parallélisable.
-- Inconvénients : Pas de validation de contraintes cross-lignes (unicité, sommes, etc.).
-
-**Si j'avais 2 semaines de plus** : J'ajouterais un système de règles avancées avec validation cross-lignes.
+- **Stockage local vs S3/GCS** : Local pour la simplicité du MVP. S3 serait mieux pour la scalabilité.
+- **Pas de streaming vs streaming** : Lecture en mémoire pour 10 MB. Streaming nécessaire pour fichiers plus gros.
+- **Polling vs SSE** : Polling plus simple. SSE serait meilleur pour le temps réel.
+- **Auth basique vs RBAC** : Auth simple sans rôles. RBAC nécessaire pour la gestion multi-tenant.
+- **Validation ligne par ligne vs cross-lignes** : Validation simple. Cross-lignes nécessaire pour contraintes métier avancées.
 
 ## 7. Next steps
 
-Si j'avais 2 semaines de plus, voici ce que je ferais (par ordre de priorité) :
+Si j'avais 2 semaines de plus, je ferais :
 
-### 1. Stockage cloud (S3/GCS)
+1. **Stockage cloud (S3/GCS)** : Remplacer le stockage local par S3 pour la scalabilité et la redondance.
 
-- Créer un service d'abstraction `storage` avec des implémentations Local et S3
-- Configurer S3 sur Railway ou utiliser un bucket externe
-- Migrer les fichiers existants vers S3
-- Avantages : Scalabilité, redondance, performance
-
-### 2. Tests E2E avec Playwright
-
-- Installer et configurer Playwright
-- Écrire des tests pour : login, création source, upload, rapport d'ingestion, export
-- Intégrer les tests dans le CI/CD
-- Avantages : Confiance dans le déploiement, détection de régressions
-
-### 3. Notifications email fonctionnelles
-
-- Configurer les variables SMTP sur Railway
-- Tester avec différents providers (Gmail, SendGrid)
-- Ajouter des templates d'email plus riches
-- Avantages : Meilleure UX, feedback automatique
-
-### 4. Server-Sent Events pour le temps réel
-
-- Remplacer le polling par SSE pour le statut d'upload
-- Implémenter un endpoint `/api/uploads/[id]/events`
-- Mettre à jour l'UI en temps réel
-- Avantages : Meilleure UX, moins de requêtes serveur
-
-### 5. Streaming de fichiers
-
-- Implémenter le streaming avec PapaParse stream mode
-- Traiter les fichiers par chunks pour réduire la mémoire
-- Avantages : Support de fichiers plus volumineux, meilleure performance
-
-### 6. Audit viewer
-
-- Créer une page `/audit` pour visualiser les logs d'audit
-- Filtrer par utilisateur, source, action, date
-- Export des logs en CSV
-- Avantages : Transparence, debugging facilité
-
-### 7. Système de rôles et permissions
-
-- Ajouter un champ `role` sur User (admin, user, viewer)
-- Implémenter un middleware de vérification de permissions
-- Créer une page admin pour gérer les utilisateurs
-- Avantages : Meilleure sécurité, gestion multi-tenant
-
-### 8. Validation cross-lignes
-
-- Ajouter un système de règles avancées (unicité, sommes, dépendances)
-- Implémenter une phase de validation après la validation ligne par ligne
-- Avantages : Validation métier plus complète
-
-### 9. Mapping interactif de colonnes
-
-- Créer une interface pour mapper les colonnes si le client change les noms
-- Sauvegarder le mapping par source
-- Avantages : Flexibilité, moins d'erreurs
-
-### 10. Webhooks
-
-- Ajouter un système de webhooks pour notifier des services externes
-- Configurer des webhooks par source (par exemple pour envoyer les données valides vers un CRM)
-- Avantages : Intégration avec d'autres systèmes, automatisation
+2. **Tests E2E avec Playwright** : Ajouter des tests navigateur pour couvrir le flux complet (login, upload, rapport).
