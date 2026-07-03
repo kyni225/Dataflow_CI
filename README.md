@@ -28,6 +28,7 @@ DataFlow CI est une plateforme qui permet aux entreprises d'ingérer des fichier
 ### Installation
 
 ```bash
+cd ChallengeArtefact
 npm install
 Copy-Item .env.example .env
 docker compose up -d
