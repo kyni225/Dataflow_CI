@@ -31,6 +31,17 @@ export async function POST(request: Request) {
     return Response.json({ upload }, { status: 202 });
   } catch (error) {
     console.error("[API /api/uploads] Error:", error);
-    return toErrorResponse(error);
+    
+    // Include detailed error information in response for debugging
+    const errorResponse = toErrorResponse(error);
+    const errorData = await errorResponse.json();
+    
+    // Add more context if available
+    if (error instanceof Error) {
+      errorData.details = error.message;
+      errorData.stack = error.stack;
+    }
+    
+    return Response.json(errorData, { status: errorResponse.status });
   }
 }
