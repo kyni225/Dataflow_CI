@@ -4,9 +4,10 @@ import { uploadRepository } from "@/repositories/upload-repository";
 
 export async function GET(
   request: Request,
-  { params }: { params: { uploadId: string } }
+  { params }: { params: Promise<{ uploadId: string }> }
 ) {
-  const upload = await uploadRepository.getUploadDetails(params.uploadId);
+  const { uploadId } = await params;
+  const upload = await uploadRepository.getUploadDetails(uploadId);
 
   if (!upload) {
     return NextResponse.json({ error: "Upload introuvable" }, { status: 404 });

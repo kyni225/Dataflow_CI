@@ -10,14 +10,15 @@ import { uploadRepository } from "@/repositories/upload-repository";
 export default async function UploadDetailsPage({
   params,
 }: {
-  params: { uploadId: string };
+  params: Promise<{ uploadId: string }>;
 }) {
-  console.log("[UploadDetails] uploadId:", params.uploadId);
+  const { uploadId } = await params;
+  console.log("[UploadDetails] uploadId:", uploadId);
   
   const session = await auth();
   console.log("[UploadDetails] session:", session?.user?.id);
   
-  const upload = await uploadRepository.getForOwner(params.uploadId, session?.user?.id ?? "");
+  const upload = await uploadRepository.getForOwner(uploadId, session?.user?.id ?? "");
   console.log("[UploadDetails] upload:", upload?.id);
 
   if (!upload) {
