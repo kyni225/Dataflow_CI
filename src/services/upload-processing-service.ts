@@ -6,6 +6,7 @@ import { parseDataFile } from "@/lib/validation/file-parser";
 import { toDomainColumn } from "@/lib/validation/schema-mapper";
 import { validateRows } from "@/lib/validation/upload-validation";
 import { uploadRepository } from "@/repositories/upload-repository";
+import { sendUploadProcessingNotification } from "@/services/email-service";
 import type { RowConstraintDefinition } from "@/types/schema";
 
 export async function processUpload(uploadId: string) {
@@ -55,6 +56,36 @@ export async function processUpload(uploadId: string) {
       errors: summary.errors,
       processingDurationMs: Date.now() - startedAt
     });
+
+    // Envoyer notification email
+    try {
+      const uploadWithUser = await prisma.upload.findUnique({
+        where: { id: uploadId },
+        include: { uploadedBy: true, source: true }
+      });
+
+      if (uploadWithUser?.uploadedBy.email) {
+        await sendUploadProcessingNotification({
+          email: uploadWithUser.uploadedBy.email,
+          uploadId: uploadId,
+          fileName: uploadWithUser.originalFileName,
+          status: status === "SUCCESS" ? "success" : status === "PARTIAL" ? "partial" : "failed",
+          rowCount: summary.rowCount,
+          validRows: summary.validRows,
+          invalidRows: summary.invalidRows,
+          downloadUrl: `${process.env.NEXTAUTH_URL}/api/uploads/${uploadId}/export-valid-rows`,
+          errorDetailsUrl: `${process.env.NEXTAUTH_URL}/uploads/${uploadId}`
+        });
+
+        await prisma.upload.update({
+          where: { id: uploadId },
+          data: { processingNotificationSentAt: new Date() }
+        });
+      }
+    } catch (emailError) {
+      console.error("Email notification failed:", emailError);
+      // Ne pas échouer le traitement si l'email échoue
+    }
 
     await prisma.auditLog.create({
       data: {

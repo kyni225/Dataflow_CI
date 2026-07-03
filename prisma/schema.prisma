@@ -163,12 +163,13 @@ model Upload {
   rowCount               Int          @default(0)
   validRows              Int          @default(0)
   invalidRows            Int          @default(0)
-  processingStartedAt    DateTime?
-  processingFinishedAt   DateTime?
-  processingDurationMs   Int?
-  errorMessage           String?
-  createdAt              DateTime     @default(now())
-  updatedAt              DateTime     @updatedAt
+  processingStartedAt      DateTime?
+  processingFinishedAt     DateTime?
+  processingDurationMs    Int?
+  processingNotificationSentAt DateTime?
+  errorMessage             String?
+  createdAt                DateTime     @default(now())
+  updatedAt                DateTime     @updatedAt
 
   source        Source              @relation(fields: [sourceId], references: [id], onDelete: Cascade)
   schemaVersion SchemaVersion       @relation(fields: [schemaVersionId], references: [id], onDelete: Cascade)
