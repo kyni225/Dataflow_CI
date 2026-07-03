@@ -50,7 +50,7 @@ export default async function UploadDetailsPage({
         </div>
         {upload.validRows > 0 && (
           <Button asChild>
-            <Link href={`/api/uploads/${upload.id}/export-valid-rows`}>
+            <Link href={`/uploads/${upload.id}/export`}>
               <Download className="h-4 w-4 mr-2" />
               Exporter les lignes valides
             </Link>
