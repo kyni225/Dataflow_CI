@@ -53,10 +53,7 @@ npm run worker
 
 URL locale : http://localhost:3000
 
-Compte de test :
-
-- Email : `demo@dataflow.ci`
-- Mot de passe : `DemoPassword123!`
+Pour utiliser l'application, créez un compte via le formulaire d'inscription.
 
 ## Variables d'environnement
 
