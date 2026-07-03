@@ -1,35 +1,31 @@
 # DataFlow CI
 
-Plateforme d'ingestion de fichiers CSV/Excel avec validation de données basée sur des schémas versionnés.
+## En 2 minutes
 
-## Fonctionnalités
+DataFlow CI est une plateforme qui permet aux entreprises d'ingérer des fichiers CSV/Excel de leurs clients et de valider automatiquement les données selon des schémas prédéfinis.
 
-- **Authentification** : Login/Register avec NextAuth.js et bcrypt
-- **Gestion des sources** : Import de schémas JSON, versionning immuable
-- **Upload de fichiers** : CSV/XLSX jusqu'à 10 MB, traitement asynchrone
-- **Validation** : Ligne par ligne avec conservation des erreurs détaillées
-- **Rapport d'ingestion** : Statut, volumes, erreurs, aperçu des lignes valides
-- **Export CSV** : Export des lignes valides
-- **Dashboard** : Visualisations avec Recharts
+**Comment ça marche :**
+1. Vous créez une "source" (par exemple : Orange CI, Banque Atlantique)
+2. Vous importez un schéma JSON qui définit les colonnes attendues, leurs types et contraintes
+3. Vos clients uploadent leurs fichiers CSV/Excel
+4. Le fichier est traité en arrière-plan et validé ligne par ligne
+5. Vous obtenez un rapport détaillé : lignes valides, erreurs par ligne/colonne
+6. Vous pouvez exporter uniquement les lignes valides en CSV
 
-## Stack technique
+**Cas d'usage :**
+- Orange CI envoie des fichiers de ventes avec des dates au format `YYYY-MM-DD` et séparateur `,`
+- Banque Atlantique envoie des fichiers de stock avec des dates au format `DD/MM/YYYY` et séparateur `;`
+- DataFlow CI valide automatiquement chaque fichier selon le schéma de sa source
 
-- **Framework** : Next.js 15 (App Router)
-- **Langage** : TypeScript
-- **Base de données** : PostgreSQL + Prisma
-- **Queue** : BullMQ + Redis
-- **Auth** : NextAuth.js
-- **UI** : TailwindCSS + Shadcn UI
-- **Charts** : Recharts
-- **Tests** : Vitest
+## Lancer le projet en local
 
-## Installation locale
-
-Prérequis :
+### Prérequis
 
 - Node.js 22+
 - Docker Desktop
 - npm
+
+### Installation
 
 ```bash
 npm install
@@ -39,74 +35,37 @@ npm run db:migrate
 npm run db:seed
 ```
 
-Lancer l'application :
+### Démarrage
 
+Terminal 1 (serveur web) :
 ```bash
 npm run dev
 ```
 
-Lancer le worker (dans un autre terminal) :
-
+Terminal 2 (worker BullMQ) :
 ```bash
 npm run worker
 ```
 
-URL locale : http://localhost:3000
+Accès local : http://localhost:3000
 
-Pour utiliser l'application, créez un compte via le formulaire d'inscription.
+## Accéder à la version déployée
 
-## Variables d'environnement
+Application déployée sur Railway : https://web-production-6fbcc6.up.railway.app
 
-| Variable | Description |
-| --- | --- |
-| `DATABASE_URL` | URL PostgreSQL |
-| `AUTH_SECRET` | Secret NextAuth |
-| `AUTH_URL` | URL pour Auth.js |
-| `NEXTAUTH_URL` | URL publique |
-| `REDIS_URL` | URL Redis pour BullMQ |
-| `UPLOAD_DIR` | Répertoire de stockage des fichiers |
-| `MAX_UPLOAD_BYTES` | Taille maximale (défaut: 10 MB) |
+## Identifiants de test
 
-## Commandes utiles
+Pour le développement local (après avoir lancé `npm run db:seed`) :
 
-```bash
-npm run dev          # Serveur de développement
-npm run build        # Build de production
-npm run worker       # Worker BullMQ
-npm run lint         # ESLint
-npm run test         # Tests Vitest
-npm run db:generate  # Générer client Prisma
-npm run db:migrate   # Appliquer migrations
-npm run db:seed      # Peupler la base de données
-```
+- **Email** : `demo@dataflow.ci`
+- **Mot de passe** : `DemoPassword123!`
 
-## Déploiement
+Pour la version déployée, créez un compte via le formulaire d'inscription.
 
-### Railway
+## Stack technique
 
-L'application est configurée pour Railway avec :
-
-- Service web : Next.js standalone
-- Service worker : BullMQ worker
-- PostgreSQL : Base de données
-- Redis : Queue BullMQ
-- Volume persistant : Stockage des fichiers
-
-Configuration requise :
-
-- Variables d'environnement configurées
-- Volume persistant monté sur `/app/uploads`
-- Commande de démarrage web : `npx prisma migrate deploy && node .next/standalone/server.js`
-- Commande de démarrage worker : `npx prisma generate && npm run worker`
-
-## Données de test
-
-Le dossier `samples/` contient les fichiers officiels :
-
-- `source-ventes-orange.json` + `ventes-orange-clean.csv` + `ventes-orange-dirty.csv`
-- `source-stock-banque.json` + `stock-banque-clean.csv` + `stock-banque-dirty.csv`
-
-Spécificités :
-
-- Orange CI : séparateur `,`, dates `YYYY-MM-DD`
-- Banque Atlantique : séparateur `;`, dates `DD/MM/YYYY`
+- Next.js 15 (App Router)
+- PostgreSQL + Prisma
+- BullMQ + Redis
+- NextAuth.js
+- TailwindCSS + Shadcn UI
