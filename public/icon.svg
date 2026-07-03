@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-label="DataFlow CI">
-  <rect width="64" height="64" rx="12" fill="#0f766e"/>
-  <path d="M16 20h32v8H16zM16 36h32v8H16z" fill="#ffffff"/>
-  <path d="M24 12h16v8H24zM24 44h16v8H24z" fill="#f59e0b"/>
+  <rect width="64" height="64" rx="16" fill="#0f766e"/>
+  <circle cx="32" cy="32" r="20" fill="#ffffff" opacity="0.2"/>
+  <path d="M20 32l8 8 16-16" stroke="#ffffff" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+  <circle cx="32" cy="32" r="4" fill="#f59e0b"/>
 </svg>
