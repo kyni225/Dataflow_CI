@@ -24,5 +24,10 @@ export function getUploadQueue() {
 }
 
 export async function enqueueUploadProcessing(uploadId: string) {
-  await getUploadQueue().add("validate-upload", { uploadId }, { jobId: uploadId });
+  try {
+    await getUploadQueue().add("validate-upload", { uploadId }, { jobId: uploadId });
+  } catch (error) {
+    console.error("Failed to enqueue upload processing:", error);
+    // Continue without queue processing - upload is saved but won't be processed
+  }
 }
