@@ -29,11 +29,16 @@ export default async function UploadDetailsPage({
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" asChild>
+            <Link href="/">
+              Dashboard
+            </Link>
+          </Button>
           <Button variant="outline" asChild>
             <Link href="/uploads">
               <ArrowLeft className="h-4 w-4 mr-2" />
-              Retour aux uploads
+              Uploads
             </Link>
           </Button>
           <div>
