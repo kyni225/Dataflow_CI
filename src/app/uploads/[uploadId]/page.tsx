@@ -1,17 +1,19 @@
+import { auth } from "@/auth";
 import { notFound } from "next/navigation";
 
 import { Button } from "@/components/ui/button";
 import { Download, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
-import { getUploadDetails } from "@/repositories/upload-repository";
+import { uploadRepository } from "@/repositories/upload-repository";
 
 export default async function UploadDetailsPage({
   params,
 }: {
   params: { uploadId: string };
 }) {
-  const upload = await getUploadDetails(params.uploadId);
+  const session = await auth();
+  const upload = await uploadRepository.getForOwner(params.uploadId, session?.user?.id ?? "");
 
   if (!upload) {
     notFound();
