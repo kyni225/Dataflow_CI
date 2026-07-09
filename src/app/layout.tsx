@@ -17,7 +17,12 @@ export const metadata: Metadata = {
 };
 
 export default async function RootLayout({ children }: { children: ReactNode }) {
-  const session = await auth();
+  let session = null;
+  try {
+    session = await auth();
+  } catch (error) {
+    console.error("[layout] auth() failed — check AUTH_SECRET, AUTH_URL, and database connectivity:", error);
+  }
 
   async function logout() {
     "use server";
